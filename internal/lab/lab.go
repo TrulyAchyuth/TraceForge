@@ -145,6 +145,7 @@ type Manager struct {
 	store   *store.Store
 	log     *slog.Logger
 	targets map[string]string
+	token   string
 	client  *http.Client
 	now     func() time.Time
 	mu      sync.Mutex // serialises start/stop so they cannot interleave
@@ -176,8 +177,13 @@ func ParseTargets(spec string) (map[string]string, error) {
 // NewManager creates a lab manager for the given target allowlist.
 func NewManager(st *store.Store, targets map[string]string, log *slog.Logger) *Manager {
 	return &Manager{store: st, log: log, targets: targets, now: time.Now,
-		client: &http.Client{Timeout: 3 * time.Second}}
+		client: &http.Client{Timeout: 3 * time.Second,
+			// Never follow redirects: the allowlist must hold and the token must not travel.
+			CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}}
 }
+
+// SetToken sets the bearer token presented to the targets' admin endpoints.
+func (m *Manager) SetToken(token string) { m.token = token }
 
 // Enabled reports whether any target is configured.
 func (m *Manager) Enabled() bool { return len(m.targets) > 0 }
@@ -211,6 +217,9 @@ func (m *Manager) send(ctx context.Context, method, target string, body any) ([]
 	req, err := http.NewRequestWithContext(ctx, method, m.endpoint(target), reader)
 	if err != nil {
 		return nil, err
+	}
+	if m.token != "" {
+		req.Header.Set("Authorization", "Bearer "+m.token)
 	}
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")

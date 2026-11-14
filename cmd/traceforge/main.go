@@ -21,6 +21,7 @@ import (
 	"github.com/TrulyAchyuth/TraceForge/internal/ingest"
 	"github.com/TrulyAchyuth/TraceForge/internal/investigate"
 	"github.com/TrulyAchyuth/TraceForge/internal/lab"
+	"github.com/TrulyAchyuth/TraceForge/internal/memory"
 	"github.com/TrulyAchyuth/TraceForge/internal/store"
 )
 
@@ -78,6 +79,8 @@ func run() error {
 		return fmt.Errorf("load detection config: %w", err)
 	}
 	labMgr := lab.NewManager(st, targets, log)
+	labMgr.SetToken(cfg.LabToken)
+	mem := memory.NewService(st, inv, log)
 
 	// Background work outlives the signal context: it is cancelled only after
 	// the HTTP servers have stopped, so spans accepted during shutdown are
@@ -96,6 +99,7 @@ func run() error {
 	background("ingest-writer", pipeline.Run)
 	background("detection", engine.Run)
 	background("lab-watcher", labMgr.Run)
+	background("incident-memory", mem.Run)
 	background("edge-resolver", func(ctx context.Context) {
 		every(ctx, edgeResolveInterval, func() {
 			for {
@@ -128,7 +132,7 @@ func run() error {
 		})
 	})
 
-	apiSrv := api.New(api.Options{Store: st, Pipeline: pipeline, Engine: engine, Investigations: inv, Lab: labMgr, Log: log,
+	apiSrv := api.New(api.Options{Store: st, Pipeline: pipeline, Engine: engine, Investigations: inv, Lab: labMgr, Memory: mem, Log: log,
 		Token: cfg.APIToken, IngestToken: cfg.IngestToken != "", WebDir: cfg.WebDir,
 		RetentionHours: cfg.RetentionHours, DetectInterval: cfg.DetectInterval})
 

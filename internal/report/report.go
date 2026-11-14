@@ -43,6 +43,20 @@ type Report struct {
 	Recommendations  []Recommendation             `json:"recommendations"`
 	Limitations      []string                     `json:"limitations"`
 	Methodology      []string                     `json:"methodology"`
+	Similar          []SimilarSection             `json:"similar_incidents"`
+}
+
+// SimilarSection is one remembered incident that resembles this one. Overlap
+// is a weighted feature overlap, not a probability; interventions were tested
+// on that other incident's data.
+type SimilarSection struct {
+	Key           string   `json:"key"`
+	Title         string   `json:"title"`
+	Simulated     bool     `json:"simulated_example"`
+	Overlap       float64  `json:"overlap"`
+	Shared        []string `json:"shared_features"`
+	Differences   []string `json:"differences"`
+	Interventions []string `json:"interventions"`
 }
 
 // Build assembles a report from an investigation view and the incident's
@@ -357,6 +371,17 @@ These are standard follow-ups for the type of hypothesis named as their basis. T
 {{range .Recommendations}}
 - {{.Action}} _(Basis: {{.Basis}})_{{end}}
 
+## Similar past incidents (Incident Memory)
+
+Matched by weighted overlap of observable features (method mem-1). This is correlation between incidents, not evidence of a shared cause, and interventions below were tested on other data.
+{{if not .Similar}}
+No similar incident is stored in memory.
+{{end}}{{range .Similar}}
+### {{.Key}} — {{.Title}}{{if .Simulated}} [SIMULATED EXAMPLE]{{end}}
+- Feature overlap: {{printf "%.3f" .Overlap}}; shared: {{join .Shared ", "}}
+{{range .Differences}}- Difference: {{.}}
+{{end}}{{range .Interventions}}- Intervention: {{.}}
+{{end}}{{end}}
 ## Limitations and assumptions
 {{range .Limitations}}
 - {{.}}{{end}}
@@ -452,6 +477,13 @@ code{font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:#f3f5f7;
 <h2>Recommended follow-up actions</h2>
 <p>These are standard follow-ups for the type of hypothesis named as their basis. They are suggestions, not findings.</p>
 <ul>{{range .Recommendations}}<li>{{.Action}} <span class="meta">(Basis: {{.Basis}})</span></li>{{end}}</ul>
+
+<h2>Similar past incidents (Incident Memory)</h2>
+<p>Matched by weighted overlap of observable features (method mem-1). This is correlation between incidents, not evidence of a shared cause; interventions were tested on other data.</p>
+{{if not .Similar}}<p>No similar incident is stored in memory.</p>{{end}}
+{{range .Similar}}<h3>{{.Key}} — {{.Title}}{{if .Simulated}} <span class="tag">SIMULATED EXAMPLE</span>{{end}}</h3>
+<p>Feature overlap {{printf "%.3f" .Overlap}}. Shared: {{join .Shared ", "}}</p>
+<ul>{{range .Differences}}<li>Difference: {{.}}</li>{{end}}{{range .Interventions}}<li>Intervention: {{.}}</li>{{end}}</ul>{{end}}
 
 <h2>Limitations and assumptions</h2><ul>{{range .Limitations}}<li>{{.}}</li>{{end}}</ul>
 <h3>Ranking methodology</h3><ul>{{range .Methodology}}<li>{{.}}</li>{{end}}</ul>

@@ -25,6 +25,7 @@ import (
 	"github.com/TrulyAchyuth/TraceForge/internal/ingest"
 	"github.com/TrulyAchyuth/TraceForge/internal/investigate"
 	"github.com/TrulyAchyuth/TraceForge/internal/lab"
+	"github.com/TrulyAchyuth/TraceForge/internal/memory"
 	"github.com/TrulyAchyuth/TraceForge/internal/store"
 )
 
@@ -39,6 +40,7 @@ type Options struct {
 	Engine         *detect.Engine
 	Investigations *investigate.Service
 	Lab            *lab.Manager
+	Memory         *memory.Service
 	Log            *slog.Logger
 	// Token, when set, is required as a bearer token on every /api request.
 	Token          string
@@ -88,6 +90,12 @@ func (s *Server) Handler() http.Handler {
 	api.HandleFunc("POST /api/v1/incidents/{id}/replays", s.handleReplayRun)
 	api.HandleFunc("GET /api/v1/replays/{id}", s.handleReplay)
 	api.HandleFunc("GET /api/v1/incidents/{id}/report", s.handleReport)
+	api.HandleFunc("GET /api/v1/incidents/{id}/similar", s.handleSimilar)
+	api.HandleFunc("GET /api/v1/memory/records", s.handleMemoryRecords)
+	api.HandleFunc("GET /api/v1/memory/graph", s.handleMemoryGraph)
+	api.HandleFunc("GET /api/v1/memory/compare", s.handleMemoryCompare)
+	api.HandleFunc("POST /api/v1/memory/seed", s.handleMemorySeed)
+	api.HandleFunc("DELETE /api/v1/memory/seed", s.handleMemoryUnseed)
 	api.HandleFunc("GET /api/v1/timeline", s.handleTimeline)
 	api.HandleFunc("GET /api/v1/lab", s.handleLab)
 	api.HandleFunc("POST /api/v1/lab/experiments", s.handleLabStart)

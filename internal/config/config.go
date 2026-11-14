@@ -17,6 +17,7 @@ type Config struct {
 	WebDir          string
 	APIToken        string
 	IngestToken     string
+	LabToken        string
 	RetentionHours  int
 	DetectInterval  time.Duration
 	LabTargets      string
@@ -55,6 +56,7 @@ func Load() (Config, error) {
 		WebDir:          str("TF_WEB_DIR", "web/dist"),
 		APIToken:        os.Getenv("TF_API_TOKEN"),
 		IngestToken:     os.Getenv("TF_INGEST_TOKEN"),
+		LabToken:        os.Getenv("TF_LAB_TOKEN"),
 		RetentionHours:  intVar("TF_RETENTION_HOURS", 24, 1, 720),
 		DetectInterval:  time.Duration(intVar("TF_DETECT_INTERVAL_SECONDS", 10, 5, 300)) * time.Second,
 		LabTargets:      os.Getenv("TF_LAB_TARGETS"),

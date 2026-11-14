@@ -339,6 +339,11 @@ func (s *Server) handleReplayRun(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
+	if inc.ResolvedAt != nil { // keep the remembered interventions current
+		if err := s.opt.Memory.Snapshot(r.Context(), id); err != nil {
+			s.opt.Log.Warn("refresh incident memory", "incident", id, "error", err)
+		}
+	}
 	sum := res.Summary
 	s.event(r.Context(), model.Event{Time: s.now().UTC(), Kind: model.EventReplay, IncidentID: &id, ReplayID: &run.ID,
 		Service: inc.PrimaryService,
@@ -378,6 +383,18 @@ func (s *Server) handleReport(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	if sim, err := s.opt.Memory.Similar(r.Context(), id); err == nil {
+		for _, m := range sim.Matches {
+			sec := report.SimilarSection{Key: m.Record.Key, Title: m.Record.Title, Simulated: m.Record.Simulated,
+				Overlap: m.Overlap, Shared: m.Shared, Differences: m.Differences}
+			for _, iv := range m.Interventions {
+				sec.Interventions = append(sec.Interventions, fmt.Sprintf("%s: %s — %s (%s)", iv.Name, iv.Effect, iv.Summary, iv.Class))
+			}
+			rep.Similar = append(rep.Similar, sec)
+		}
+	} else {
+		s.opt.Log.Warn("report: incident memory unavailable", "incident", id, "error", err)
 	}
 	var data []byte
 	switch format {

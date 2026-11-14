@@ -5,6 +5,7 @@ x-sample: &sample
   depends_on: [traceforge]
   environment: &sample-env
     OTEL_EXPORTER_OTLP_ENDPOINT: http://traceforge:4318
+    ADMIN_TOKEN: ${TF_LAB_TOKEN:-}
     GATEWAY_URL: http://gateway:8080
     CHECKOUT_URL: http://checkout:8080
     PAYMENT_URL: http://payment:8080
@@ -23,6 +24,8 @@ services:
     depends_on: {postgres: {condition: service_healthy}}
     environment:
       TF_DATABASE_URL: postgres://postgres:traceforge@postgres:5432/traceforge?sslmode=disable
+      TF_API_TOKEN: ${TF_API_TOKEN:-}
+      TF_LAB_TOKEN: ${TF_LAB_TOKEN:-}
       TF_LAB_TARGETS: gateway=http://gateway:8080,checkout=http://checkout:8080,payment=http://payment:8080,inventory=http://inventory:8080,notification=http://notification:8080,loadgen=http://loadgen:8080
     ports: ["8080:8080", "4318:4318"]
   gateway:      {<<: *sample, environment: {<<: *sample-env, ROLE: gateway}}
