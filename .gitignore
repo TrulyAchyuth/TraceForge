@@ -3,3 +3,5 @@
 *.log
 .env
 /graphify-out/
+/web/node_modules/
+/web/test-results/
