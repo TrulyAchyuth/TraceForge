@@ -53,7 +53,7 @@ function Runner({ id, focus }: { id: string; focus: string | null }) {
         {err && <ErrorBox message={err} />}
         {!inv.loading && services.length === 0 && <div className="notice bad">No captured dataset yet. Open the incident's Investigation tab to capture one.</div>}
       </form>
-      <Async state={runs}>{d => d.replays.length === 0 ? <Empty title="No replays yet" /> : <>{[...d.replays].reverse().map(r => <Result key={r.id} run={r} open={focus ? String(r.id) === focus : r === d.replays[d.replays.length - 1]} />)}</>}</Async>
+      <Async state={runs}>{d => d.replays.length === 0 ? <Empty title="No replays yet" /> : <>{d.replays.map((r, i) => <Result key={r.id} run={r} open={focus ? String(r.id) === focus : i === 0} />)}</>}</Async>
     </>
   );
 }
@@ -64,9 +64,12 @@ const side = (title: string, s: ReplayResult['summary']['original'], tag: string
     <div className="metric"><span>p95</span><b>{fmtMs(s.p95_ms)}</b></div><div className="metric"><span>p99</span><b>{fmtMs(s.p99_ms)}</b></div></div>
 );
 
-function Result({ run, open }: { run: ReplayRun; open: boolean }) {
+/** The list endpoint omits results, so each run loads its own. */
+function Result({ run: summary, open }: { run: ReplayRun; open: boolean }) {
+  const full = useApi<{ replay: ReplayRun }>(`/replays/${summary.id}`);
+  const run = full.data?.replay ?? summary;
   const r = run.result;
-  if (!r) return null;
+  if (!r) return <div className="panel pad section"><b>{summary.name}</b> {full.error ? <ErrorBox message={full.error} retry={full.reload} /> : <span className="mut">Loading result…</span>}</div>;
   const t = (b: string) => new Date(b).getTime();
   return (
     <details className="panel pad section" open={open}>

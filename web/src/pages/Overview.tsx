@@ -18,7 +18,7 @@ export function Overview() {
         return (
           <>
             <div className="panel pad section">
-              <div className="row" style={{ gap: 36 }}>
+              <div className="row" style={{ gap: '16px 36px', flexWrap: 'wrap' }}>
                 <div className="stat"><span className="v">{d.totals.rate_per_sec.toFixed(1)}</span><span className="l">requests / s</span></div>
                 <div className="stat"><span className="v">{fmtPct(d.totals.error_rate)}</span><span className="l">error rate</span></div>
                 <div className="stat"><span className="v">{fmtMs(d.totals.p95_ms)}</span><span className="l">p95 latency</span></div>

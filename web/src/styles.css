@@ -142,3 +142,6 @@ a.item:hover { background: var(--raised); }
 .cmp .side.simulated .tag { color: var(--warn); }
 .metric { display: flex; justify-content: space-between; padding: 3px 0; } .metric b { font-weight: 500; font-variant-numeric: tabular-nums; }
 .gate { max-width: 380px; margin: 14vh auto; padding: 24px; }
+.grid > * { min-width: 0; }
+.split > * { min-width: 0; }
+input[type=search] { max-width: 100%; }
