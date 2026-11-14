@@ -155,13 +155,13 @@ func TestRequestValidation(t *testing.T) {
 
 func TestGzipBombIsRefused(t *testing.T) {
 	cfg := DefaultConfig()
-	cfg.MaxDecodedBytes = 1 << 10
+	cfg.MaxDecodedBytes = 4 << 10
 	p := newPipe(t, cfg, &fakeWriter{})
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	_, _ = gz.Write(make([]byte, 1<<20)) // 1 MiB of zeros compresses to about 1 KiB
 	_ = gz.Close()
-	if buf.Len() >= 1<<10 {
+	if buf.Len() >= 1<<16 {
 		t.Skip("test payload did not compress enough")
 	}
 	if got := post(p, otlp.ContentProtobuf, buf.Bytes(), map[string]string{"Content-Encoding": "gzip"}).Code; got != 413 {

@@ -122,7 +122,7 @@ export interface ReplayResult {
   summary: { original: Stat; counterfactual: Stat; original_retries: number; counterfactual_retries: number; objective_ms: number; original_breach_rate: number; counterfactual_breach_rate: number; sampling_fraction_percent: number };
   services: Cmp[]; operations: Cmp[]; series: { bucket: string; original_error_rate: number; counterfactual_error_rate: number; original_p95_ms: number; counterfactual_p95_ms: number }[];
   findings: { scope: string; metric: string; unit: string; original: number; counterfactual: number; changed: boolean }[];
-  assumptions: string[]; limitations: string[]; unsupported_conclusions: string[]; diagnostics: { identity_checked: number; identity_mismatches: number; traces_changed: number };
+  assumptions: string[]; limitations: string[]; unsupported_conclusions: string[]; diagnostics: { traces_in_dataset: number; traces_replayed: number; traces_skipped_incomplete: number; traces_changed: number; censored_attempts: number; imputed_durations: number };
 }
 export interface MemoryRecord {
   id: number; key: string; incident_id?: number; simulated: boolean; title: string; severity: string; trigger_rule: string; started_at: string;

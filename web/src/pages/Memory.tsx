@@ -44,11 +44,12 @@ function Graph() {
             <label className="row"><input type="checkbox" checked={hideSim} onChange={e => setHideSim(e.target.checked)} />Hide simulated</label>
           </div>
           <div className="graph-box"><svg width={view.width} height={view.height} role="img" aria-label="Incident memory graph">
+            {NODE_COLUMNS.map(c => { const n = view.nodes.find(x => x.type === c); return n ? <text key={c} className="gcol" x={n.x} y={18} textAnchor="middle">{NODE_LABEL[c].toUpperCase()}</text> : null; })}
             {view.edges.map((e, i) => { const a = byId.get(e.source)!, b = byId.get(e.target)!; const on = hot?.edges.includes(e);
               return <path key={i} className={`gedge ${e.effect ?? ''} ${on ? 'hot' : hot ? 'dim' : ''}`} d={`M${a.x},${a.y}C${(a.x + b.x) / 2},${a.y} ${(a.x + b.x) / 2},${b.y} ${b.x},${b.y}`} />; })}
-            {view.nodes.map(n => <g key={n.id} className={`gnode ${n.simulated ? 'sim' : ''} ${sel === n.id ? 'sel' : ''} ${hot && !hot.nodes.has(n.id) ? 'dim' : ''}`} tabIndex={0} role="button" aria-label={`${n.type} ${n.label}`}
+            {view.nodes.map(n => <g key={n.id} className={`gnode t-${n.type} ${n.simulated ? 'sim' : ''} ${sel === n.id ? 'sel' : ''} ${hot && !hot.nodes.has(n.id) ? 'dim' : ''}`} tabIndex={0} role="button" aria-label={`${n.type} ${n.label}`}
               onClick={() => setSel(sel === n.id ? null : n.id)} onKeyDown={e => { if (e.key === 'Enter') setSel(sel === n.id ? null : n.id); }}>
-              <rect x={n.x - 80} y={n.y - 12} width={160} height={24} rx={5} /><text x={n.x} y={n.y + 4} textAnchor="middle">{n.label.length > 24 ? n.label.slice(0, 23) + '…' : n.label}</text></g>)}
+              <title>{n.label}</title><rect x={n.x - 86} y={n.y - 13} width={172} height={26} rx={6} /><text x={n.x} y={n.y + 4} textAnchor="middle">{n.label.length > 26 ? n.label.slice(0, 25) + '…' : n.label}</text></g>)}
           </svg></div>
           {node && <div className="panel pad section"><b>{node.label}</b> <Badge>{node.type}</Badge> {node.simulated && <SimBadge />}{node.detail && <p className="mut">{node.detail}</p>}
             {hot!.edges.filter(e => e.note).map((e, i) => <p key={i} className="mut">{e.kind}: {e.note}</p>)}</div>}

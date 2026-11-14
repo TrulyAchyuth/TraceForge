@@ -1,0 +1,46 @@
+== reconciliation
+spans attempted by exporter : 180000
+spans acknowledged (HTTP 200): 180000
+spans stored in postgres    : 180000
+acknowledged but not stored : 0
+never acknowledged          : 0
+== pipeline counters since last traceforge restart
+{"requests":4158,"requests_rejected":0,"requests_throttled":0,"spans_received":152249,"spans_accepted":152249,"spans_rejected":0,"spans_written":152193,"spans_duplicate":0,"spans_dropped":0,"write_errors":2,"queue_depth":56,"queue_capacity":50000,"reject_reasons":{},"spans_per_second_1m":382.48333333333335,"last_ingest_at":"2026-11-14T12:58:35.368828221Z","last_error":"write spans: FATAL: terminating connection due to administrator command (SQLSTATE 57P01)","last_error_at":"2026-11-14T12:54:57.23192608Z","started_at":"2026-11-14T12:53:44.779436651Z"}
+== incidents
+[{"id":3,"title":"Dependency degradation: checkout → payment","status":"open","started_at":"2026-11-14T12:55:20Z"},{"id":2,"title":"Dependency degradation: checkout → payment","status":"resolved","started_at":"2026-11-14T12:50:40Z"},{"id":1,"title":"Dependency degradation: checkout → payment","status":"resolved","started_at":"2026-11-14T12:31:00Z"}]
+== services
+[{"name":"checkout","status":"healthy"},{"name":"gateway","status":"healthy"},{"name":"inventory","status":"healthy"},{"name":"loadtest-1794660667","status":"idle"},{"name":"loadtest-1794660734","status":"healthy"},{"name":"notification","status":"healthy"},{"name":"payment","status":"healthy"}]
+== db
+271 MB
+{
+  "api_probe": {
+    "max_ms": 11.171,
+    "p50_ms": 5.788,
+    "p95_ms": 9.053,
+    "p99_ms": 9.756,
+    "requests": 358,
+    "status": {
+      "200": 357,
+      "503": 1
+    }
+  },
+  "batch": 50,
+  "duration_s": 360,
+  "ingest": {
+    "max_ms": 4.491,
+    "p50_ms": 1.661,
+    "p95_ms": 2.528,
+    "p99_ms": 3.039,
+    "requests": 3603,
+    "status": {
+      "200": 3600,
+      "conn_error": 3
+    }
+  },
+  "retried_requests": 3,
+  "spans_acked": 180000,
+  "spans_attempted": 180000,
+  "spans_gave_up": 0,
+  "target_spans_per_s": 500,
+  "unique_span_prefix_service": "loadtest-1794660734"
+}

@@ -88,7 +88,7 @@ export interface GraphFilter { types: Set<string>; hideSimulated: boolean; query
  * Places nodes in one column per type, ordered by how many incidents they connect (then label) so that
  * the layout is stable between renders. Filtering removes nodes and every edge touching them.
  */
-export function layoutGraph(g: MemoryGraphData, f: GraphFilter, width = 1000, rowH = 34): GraphView {
+export function layoutGraph(g: MemoryGraphData, f: GraphFilter, width = 1180, rowH = 38): GraphView {
   const q = f.query.trim().toLowerCase();
   const keep = new Set(g.nodes.filter(n => f.types.has(n.type) && !(f.hideSimulated && n.simulated) && (!q || n.type === 'incident' || n.label.toLowerCase().includes(q))).map(n => n.id));
   let edges = g.edges.filter(e => keep.has(e.source) && keep.has(e.target));
@@ -107,7 +107,7 @@ export function layoutGraph(g: MemoryGraphData, f: GraphFilter, width = 1000, ro
     const list = g.nodes.filter(n => keep.has(n.id) && n.type === c)
       .sort((a, b) => (degree.get(b.id) ?? 0) - (degree.get(a.id) ?? 0) || a.label.localeCompare(b.label));
     maxRows = Math.max(maxRows, list.length);
-    list.forEach((n, i) => nodes.push({ ...n, x: cols.length === 1 ? width / 2 : 90 + (ci * (width - 180)) / (cols.length - 1), y: 44 + i * rowH }));
+    list.forEach((n, i) => nodes.push({ ...n, x: cols.length === 1 ? width / 2 : 100 + (ci * (width - 200)) / (cols.length - 1), y: 44 + i * rowH }));
   });
   return { nodes, edges, width, height: 44 + maxRows * rowH + 20 };
 }

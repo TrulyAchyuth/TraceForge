@@ -88,11 +88,11 @@ test('replay: run a counterfactual and see labelled simulated results; invalid i
   const bad = watch(page);
   await page.goto('/#/replay?incident=1');
   await expect(page.getByText('Results are')).toBeVisible();
-  await page.getByLabel('Service').selectOption('payment');
+  await expect(page.getByLabel('Service')).toHaveValue('payment'); // defaults to the top-ranked origin
   await page.getByRole('button', { name: 'Run replay' }).click();
   await expect(page.getByText('Counterfactual').first()).toBeVisible();
   await expect(page.getByText('simulated').first()).toBeVisible();
-  await expect(page.getByText('Identity check').first()).toBeVisible();
+  await expect(page.getByText('Replayed').first()).toBeVisible();
   // retry_policy with no caller must be rejected by the server and shown, not swallowed
   await page.getByLabel('Intervention').selectOption('retry_policy');
   await page.getByRole('button', { name: 'Run replay' }).click();

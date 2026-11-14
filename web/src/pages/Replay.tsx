@@ -25,15 +25,17 @@ export function ReplayPage() {
 }
 
 function Runner({ id, focus }: { id: string; focus: string | null }) {
-  const inv = useApi<{ replay_options: { services: string[]; edges: { caller: string; callee: string }[] } | null }>(`/incidents/${id}/investigation`);
+  const inv = useApi<{ hypotheses: { service: string }[]; replay_options: { services: string[]; edges: { caller: string; callee: string }[] } | null }>(`/incidents/${id}/investigation`);
   const runs = useApi<{ replays: ReplayRun[] }>(`/incidents/${id}/replays`);
   const [iv, setIv] = useState<Intervention>({ type: 'scale_latency', mode: 'baseline' });
   const [seed, setSeed] = useState(7); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
   const services = inv.data?.replay_options?.services ?? [];
+  const suggested = inv.data?.hypotheses?.[0]?.service; // start from the most likely origin
+  const current = iv.service ?? (suggested && services.includes(suggested) ? suggested : services[0]);
   const set = (p: Partial<Intervention>) => setIv({ ...iv, ...p });
   const run = (e: FormEvent) => {
     e.preventDefault(); setBusy(true); setErr('');
-    const clean = { ...iv, service: iv.service || services[0] };
+    const clean = { ...iv, service: current };
     api(`/incidents/${id}/replays`, { method: 'POST', body: { name: `${TYPES[iv.type]} on ${clean.service}`, seed, latency_objective_ms: 0, interventions: [clean] } })
       .then(runs.reload).catch(x => setErr(x.message)).finally(() => setBusy(false));
   };
@@ -42,7 +44,7 @@ function Runner({ id, focus }: { id: string; focus: string | null }) {
       <form className="panel pad section" onSubmit={run}>
         <div className="row" style={{ flexWrap: 'wrap', alignItems: 'end' }}>
           <label className="f">Intervention<select value={iv.type} onChange={e => setIv({ type: e.target.value, mode: e.target.value === 'scale_latency' ? 'baseline' : undefined })}>{Object.entries(TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
-          <label className="f">Service<select value={iv.service ?? services[0] ?? ''} onChange={e => set({ service: e.target.value })}>{services.map(s => <option key={s}>{s}</option>)}</select></label>
+          <label className="f">Service<select value={current ?? ''} onChange={e => set({ service: e.target.value })}>{services.map(s => <option key={s}>{s}</option>)}</select></label>
           {iv.type === 'scale_latency' && <label className="f">Mode<select value={iv.mode} onChange={e => set({ mode: e.target.value })}><option value="baseline">Restore to baseline</option><option value="factor">Multiply by factor</option></select></label>}
           {iv.type === 'scale_latency' && iv.mode === 'factor' && <label className="f">Factor<input type="number" step="0.1" min="0" max="20" value={iv.factor ?? 1} onChange={e => set({ factor: +e.target.value })} /></label>}
           {iv.type === 'retry_policy' && <><label className="f">Caller<input value={iv.caller ?? ''} onChange={e => set({ caller: e.target.value })} /></label><label className="f">Max attempts<input type="number" min="1" max="10" value={iv.max_attempts ?? 1} onChange={e => set({ max_attempts: +e.target.value })} /></label></>}
@@ -75,7 +77,7 @@ function Result({ run: summary, open }: { run: ReplayRun; open: boolean }) {
     <details className="panel pad section" open={open}>
       <summary><b>{run.name}</b> <Badge kind="sim">simulated</Badge> <span className="mut">seed {run.seed} · dataset v{run.dataset_version}</span></summary>
       <div className="cmp section">{side('Recorded (modelled)', r.summary.original, 'Original')}{side('With intervention', r.summary.counterfactual, 'Counterfactual')}</div>
-      <p className="mut">Identity check: {r.diagnostics.identity_checked - r.diagnostics.identity_mismatches}/{r.diagnostics.identity_checked} traces replayed unchanged without an intervention; {r.diagnostics.traces_changed} changed with it.</p>
+      <p className="mut">Replayed {r.diagnostics.traces_replayed} of {r.diagnostics.traces_in_dataset} captured traces; the intervention changed {r.diagnostics.traces_changed}. {r.diagnostics.traces_skipped_incomplete > 0 && `${r.diagnostics.traces_skipped_incomplete} incomplete traces were skipped. `}{r.diagnostics.imputed_durations > 0 && `${r.diagnostics.imputed_durations} unobserved durations were imputed from the baseline.`}</p>
       {r.series.length > 1 && <LineChart label="p95 over time, original vs counterfactual" format={fmtMs} series={[
         { name: 'original', color: 'var(--bad)', points: r.series.map(p => ({ t: t(p.bucket), v: p.original_p95_ms })) },
         { name: 'counterfactual', color: 'var(--ok)', dashed: true, points: r.series.map(p => ({ t: t(p.bucket), v: p.counterfactual_p95_ms })) }]} />}

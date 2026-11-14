@@ -145,3 +145,9 @@ a.item:hover { background: var(--raised); }
 .grid > * { min-width: 0; }
 .split > * { min-width: 0; }
 input[type=search] { max-width: 100%; }
+
+/* memory graph: colour by node type, readable edges */
+.gnode.t-incident rect { stroke: var(--accent); } .gnode.t-signature rect { stroke: var(--warn); } .gnode.t-outcome rect { stroke: var(--ok); }
+.gnode:hover rect { fill: var(--line2); }
+.gcol { fill: var(--dim); font-size: 10px; letter-spacing: .08em; }
+.gedge { stroke: #3a4458; stroke-width: 1.3; }
