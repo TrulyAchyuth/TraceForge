@@ -1,0 +1,34 @@
+# Run from the repository root: docker compose -f deploy/docker-compose.yml up --build
+x-sample: &sample
+  image: traceforge:local
+  command: sampleapp
+  depends_on: [traceforge]
+  environment: &sample-env
+    OTEL_EXPORTER_OTLP_ENDPOINT: http://traceforge:4318
+    GATEWAY_URL: http://gateway:8080
+    CHECKOUT_URL: http://checkout:8080
+    PAYMENT_URL: http://payment:8080
+    INVENTORY_URL: http://inventory:8080
+    NOTIFICATION_URL: http://notification:8080
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment: {POSTGRES_PASSWORD: traceforge, POSTGRES_DB: traceforge}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: {test: [CMD-SHELL, "pg_isready -U postgres"], interval: 3s, retries: 20}
+  traceforge:
+    image: traceforge:local
+    build: {context: .., dockerfile: deploy/Dockerfile}
+    depends_on: {postgres: {condition: service_healthy}}
+    environment:
+      TF_DATABASE_URL: postgres://postgres:traceforge@postgres:5432/traceforge?sslmode=disable
+      TF_LAB_TARGETS: gateway=http://gateway:8080,checkout=http://checkout:8080,payment=http://payment:8080,inventory=http://inventory:8080,notification=http://notification:8080,loadgen=http://loadgen:8080
+    ports: ["8080:8080", "4318:4318"]
+  gateway:      {<<: *sample, environment: {<<: *sample-env, ROLE: gateway}}
+  checkout:     {<<: *sample, environment: {<<: *sample-env, ROLE: checkout}}
+  payment:      {<<: *sample, environment: {<<: *sample-env, ROLE: payment}}
+  inventory:    {<<: *sample, environment: {<<: *sample-env, ROLE: inventory}}
+  notification: {<<: *sample, environment: {<<: *sample-env, ROLE: notification}}
+  loadgen:      {<<: *sample, environment: {<<: *sample-env, ROLE: loadgen}}
+volumes: {pgdata: {}}

@@ -1,0 +1,5 @@
+/bin/
+.playwright-mcp/
+*.log
+.env
+/graphify-out/
