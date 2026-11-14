@@ -134,8 +134,8 @@ func (s *Server) authenticate(next http.Handler) http.Handler {
 			}
 		}
 		if s.opt.Token != "" {
-			got := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-			if subtle.ConstantTimeCompare([]byte(got), []byte(s.opt.Token)) != 1 {
+			got, hasScheme := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+			if !hasScheme || subtle.ConstantTimeCompare([]byte(got), []byte(s.opt.Token)) != 1 {
 				w.Header().Set("WWW-Authenticate", `Bearer realm="traceforge"`)
 				writeError(w, http.StatusUnauthorized, "unauthorized", "a valid API token is required")
 				return

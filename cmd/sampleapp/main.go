@@ -129,8 +129,8 @@ func (f *faultState) clear() {
 
 func (f *faultState) handler(w http.ResponseWriter, r *http.Request) {
 	// ADMIN_TOKEN, when set, protects fault injection and load control.
-	if tok := os.Getenv("ADMIN_TOKEN"); tok != "" &&
-		subtle.ConstantTimeCompare([]byte(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")), []byte(tok)) != 1 {
+	got, hasScheme := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+	if tok := os.Getenv("ADMIN_TOKEN"); tok != "" && (!hasScheme || subtle.ConstantTimeCompare([]byte(got), []byte(tok)) != 1) {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
