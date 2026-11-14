@@ -1,6 +1,6 @@
 # TraceForge status
 
-Last updated: 2026-11-14 (after local review)
+Last updated: 2026-11-14 (UI rebuilt in React; acceptance run in progress)
 
 ## Done and verified
 - Go backend (`cmd/`, `internal/`): OTLP ingest, Postgres store, detection, investigation, replay,
@@ -28,3 +28,13 @@ Last updated: 2026-11-14 (after local review)
 - Only config and API-auth unit tests were added; most packages have no tests (replay has some).
 - UI is minimal; only checked on Chrome-class browser via Playwright, no UI tests.
 - Replay UI offers one intervention type (restore latency to baseline).
+
+## Resumed work (after interruption)
+- Incident Memory (records, fingerprint, similarity, graph, API, report section) committed earlier.
+- Web UI rebuilt in React + TypeScript (`web/src`, built to `web/dist` by `npm run build`): the seven pages that were
+  missing (incidents, replay, memory graph, lab, timeline, reports, settings) are now written; `tsc` and vitest pass.
+  Token gate keeps the API token in sessionStorage only.
+- `scripts/e2e.sh` is the acceptance script (security checks, injection, investigation, memory, replay determinism, reports, recovery).
+  Run against a token-protected compose stack: `TF_API_TOKEN=... TF_LAB_TOKEN=... docker-compose -f deploy/docker-compose.yml up --build -d`
+  then `TOKEN=... scripts/e2e.sh`. On this machine docker needs `DOCKER_HOST=unix://$HOME/.colima/default/docker.sock` and a
+  credential-helper-free `DOCKER_CONFIG`.
