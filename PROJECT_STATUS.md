@@ -38,3 +38,10 @@ Last updated: 2026-11-14 (UI rebuilt in React; acceptance run in progress)
   Run against a token-protected compose stack: `TF_API_TOKEN=... TF_LAB_TOKEN=... docker-compose -f deploy/docker-compose.yml up --build -d`
   then `TOKEN=... scripts/e2e.sh`. On this machine docker needs `DOCKER_HOST=unix://$HOME/.colima/default/docker.sock` and a
   credential-helper-free `DOCKER_CONFIG`.
+
+## Final acceptance (2026-11-14)
+- `scripts/e2e.sh` against a token-protected compose stack (fresh volume): **27 passed, 0 failed**. Covers auth/CSRF,
+  ingest, injected payment latency -> incident -> investigation (payment first) -> incident memory (simulated matches
+  labelled) -> deterministic counterfactual replay -> md/html/json reports -> auto-resolve -> saved to memory graph.
+- Still not done: Playwright browser tests (only vitest unit tests for `lib.ts`), Go tests for ingest/detect/store/report,
+  checking the new React pages (other than Overview and the token gate) in a real browser, a dedicated reliability/soak test.
