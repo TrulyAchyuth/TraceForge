@@ -22,7 +22,21 @@ func TestAuthAndStatic(t *testing.T) {
 			t.Errorf("auth %q: got %d want %d", auth, w.Code, want)
 		}
 	}
+	r := httptest.NewRequest("POST", "/api/v1/x", nil)
+	r.Header.Set("Authorization", "Bearer secret")
+	r.Header.Set("Origin", "http://evil.example")
 	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	if w.Code != 403 {
+		t.Errorf("cross-origin POST: got %d", w.Code)
+	}
+	r.Header.Set("Origin", "http://"+r.Host)
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	if w.Code != 204 {
+		t.Errorf("same-origin POST: got %d", w.Code)
+	}
+	w = httptest.NewRecorder()
 	s.static().ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
 	if w.Code != 200 {
 		t.Errorf("static without a build: got %d", w.Code)

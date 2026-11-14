@@ -35,6 +35,8 @@ go test ./...
 go run ./cmd/traceforge     # needs TF_DATABASE_URL
 ```
 
+Browser writes from a different Origin are rejected, but set `TF_API_TOKEN` before exposing the server beyond localhost.
+
 The UI is plain HTML/JS in `web/dist` (no build step). The lab fault endpoints on the sample
 services are unauthenticated: run the demo only on an isolated network.
 

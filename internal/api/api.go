@@ -13,6 +13,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -116,6 +117,14 @@ func securityHeaders(next http.Handler) http.Handler {
 
 func (s *Server) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Browsers attach Origin to cross-site writes; without this check any web
+		// page could drive the API (and the failure lab) when no token is set.
+		if o := r.Header.Get("Origin"); o != "" && r.Method != http.MethodGet && r.Method != http.MethodHead {
+			if u, err := url.Parse(o); err != nil || u.Host != r.Host {
+				writeError(w, http.StatusForbidden, "cross_origin", "cross-origin requests are not allowed")
+				return
+			}
+		}
 		if s.opt.Token != "" {
 			got := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 			if subtle.ConstantTimeCompare([]byte(got), []byte(s.opt.Token)) != 1 {

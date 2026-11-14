@@ -70,7 +70,7 @@ async function incident(id) {
   const ev = h => h.evidence.map(e => `<li>${tag(e.polarity)} ${esc(e.text)} <span class="mut">(${esc(e.class)}, ${e.points >= 0 ? '+' : ''}${e.points})</span></li>`).join('');
   return `<h1>${esc(i.key)} ${tag(i.severity)} ${tag(i.status)}</h1><p>${esc(i.title)}</p>
     <p class="mut">Affected: ${esc((i.affected_services || []).join(', '))} · started ${when(i.started_at)} ·
-    Report: <a href="/api/v1/incidents/${i.id}/report?format=md" target="_blank">md</a> · <a href="/api/v1/incidents/${i.id}/report?format=html" target="_blank">html</a> · <a href="/api/v1/incidents/${i.id}/report?format=json" target="_blank">json</a>
+    Report: ${['md', 'html', 'json'].map(f => `<a href="#" data-report="${f}" data-inc="${i.id}">${f}</a>`).join(' · ')}
     ${i.status !== 'resolved' ? ` · <button data-resolve="${i.id}">Mark resolved</button>` : ''}</p>
     <h2>Signals</h2>${(i.signals || []).map(s => `<div class="card">${tag(s.severity)} ${esc(s.message)}</div>`).join('')}
     <h2>Hypotheses</h2>${(d.hypotheses || []).map(h => `<div class="card"><strong>#${h.rank} ${esc(h.title)}</strong> <span class="mut">evidence ${h.score}/${h.max_score}</span>
@@ -111,6 +111,14 @@ async function render() {
 $app.addEventListener('click', async e => {
   const d = e.target.dataset;
   try {
+    if (d.report) { // fetched with the bearer token, so links keep working when auth is on
+      e.preventDefault();
+      const r = await fetch(`/api/v1/incidents/${d.inc}/report?format=${d.report}`, { headers: token() ? { Authorization: 'Bearer ' + token() } : {} });
+      if (!r.ok) throw new Error('report failed: ' + r.status);
+      const blob = await r.blob();
+      window.open(URL.createObjectURL(new Blob([blob], { type: 'text/plain' })));
+      return;
+    }
     if (d.start) await post('/lab/experiments', { scenario: d.start, duration_seconds: +d.dur, seed: 1 });
     else if (d.stop) await post(`/lab/experiments/${d.stop}/stop`);
     else if ('reset' in d) await post('/lab/reset');
