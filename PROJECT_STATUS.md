@@ -1,47 +1,37 @@
 # TraceForge status
 
-Last updated: 2026-11-14 (UI rebuilt in React; acceptance run in progress)
+Last updated: 2026-11-14. Local demonstration; **not production-ready** (see docs/SECURITY.md, docs/LIMITATIONS.md).
 
-## Done and verified
-- Go backend (`cmd/`, `internal/`): OTLP ingest, Postgres store, detection, investigation, replay,
-  reports, failure lab, REST API. `go build`, `go vet`, `go test ./...` pass.
-- End-to-end checked against real Postgres: sample app -> ingest -> payment-latency experiment ->
-  incident -> investigation (payment ranked first) -> replay -> report -> status PATCH -> lab reset.
-- Web UI (`web/dist`, vanilla JS): overview, services, dependencies, incidents + detail, traces, lab.
-  Loaded in a browser under the CSP with no console errors.
-- Docker image builds; `deploy/docker-compose.yml` brings up the full stack and the lab works in it.
+## Implemented
+Go backend (OTLP ingest, Postgres store, detection, investigation, replay, reports, failure lab, Incident Memory + graph,
+REST API with optional bearer token) and a React + TypeScript UI (overview, services, dependencies, traces, incidents with
+investigation/similar/replays/notes, counterfactual replay, memory graph, timeline, reports, lab, settings, token gate).
 
-## Review (local, manual; `/ultrareview` is user-triggered and was not run)
-- Fixed: state-changing API calls from a foreign Origin were accepted (CSRF risk when no `TF_API_TOKEN`,
-  including lab fault injection). Now rejected with 403; unit-tested.
-- Fixed: UI report links returned 401 when `TF_API_TOKEN` was set; they are now fetched with the token.
-- Compose run verified end to end: payment-latency experiment -> incident INC-0001 -> investigation ranks
-  payment first (9/10) -> fault auto-clears -> incident auto-resolves, all services healthy.
-- Reviewed, no change needed: SQL built from fixed fragments with bound args, static path handling,
-  constant-time token compare, lab allowlist, html/template for HTML reports.
+## Verification (2026-11-14, fresh token-protected compose stack, demo tokens)
+| Check | Result |
+|---|---|
+| `go vet ./...` | clean |
+| `go test ./...` | 12 packages with tests, all pass: 73 test functions/subtests passed, 1 skipped (Postgres-backed memory test needs `TF_TEST_DATABASE_URL`; run separately against a throwaway Postgres: passed) |
+| Frontend `npm test` / `npm run build` | 10 vitest tests pass; `tsc --noEmit` + Vite build succeed |
+| Playwright (`npm run e2e`, Chromium) | 12 of 12 pass, repeated 3 times for stability earlier, and once more on the final fresh stack |
+| `scripts/e2e.sh` acceptance | 27 of 27 pass (fresh stack, final image) |
+| Docker image build + compose startup | OK (needs `DOCKER_HOST`/`DOCKER_CONFIG` workaround on this Colima machine, see docs/DEMO.md) |
+| Reliability run (`scripts/reliability.sh`, 360 s, 500 spans/s, restarts of traceforge and postgres, injected fault) | 180,000 sent = 180,000 acknowledged = 180,000 stored; ingest p95 2.5 ms; API read p95 9.1 ms; 3 refused connections during restart (retried), 1 API 503 during the postgres restart; see docs/RELIABILITY.md |
 
-## Not done / limitations
-- Investigation's second hypothesis ("gateway request volume surged") was a plausible-looking false lead in
-  the verified run; ranking is a heuristic aid.
-- Lab targets follow HTTP redirects; the sample `/admin/fault` endpoints are unauthenticated (demo network only).
-- Without `TF_API_TOKEN` the API and lab are open to anyone who can reach port 8080.
-- Only config and API-auth unit tests were added; most packages have no tests (replay has some).
-- UI is minimal; only checked on Chrome-class browser via Playwright, no UI tests.
-- Replay UI offers one intervention type (restore latency to baseline).
+## Bugs found and fixed in this pass
+- Replay page showed nothing for existing runs (list endpoint omits results): each run now loads its own result.
+- Replay page opened the oldest run, and showed `NaN` diagnostics (wrong field names).
+- Replay service defaulted to the alphabetically first service; now the top-ranked origin.
+- Horizontal overflow on phone width (overview, dependencies); memory graph clipped its right column.
+- `Authorization: <token>` without the `Bearer` scheme was accepted by the API and by the sample-app admin endpoint.
 
-## Resumed work (after interruption)
-- Incident Memory (records, fingerprint, similarity, graph, API, report section) committed earlier.
-- Web UI rebuilt in React + TypeScript (`web/src`, built to `web/dist` by `npm run build`): the seven pages that were
-  missing (incidents, replay, memory graph, lab, timeline, reports, settings) are now written; `tsc` and vitest pass.
-  Token gate keeps the API token in sessionStorage only.
-- `scripts/e2e.sh` is the acceptance script (security checks, injection, investigation, memory, replay determinism, reports, recovery).
-  Run against a token-protected compose stack: `TF_API_TOKEN=... TF_LAB_TOKEN=... docker-compose -f deploy/docker-compose.yml up --build -d`
-  then `TOKEN=... scripts/e2e.sh`. On this machine docker needs `DOCKER_HOST=unix://$HOME/.colima/default/docker.sock` and a
-  credential-helper-free `DOCKER_CONFIG`.
-
-## Final acceptance (2026-11-14)
-- `scripts/e2e.sh` against a token-protected compose stack (fresh volume): **27 passed, 0 failed**. Covers auth/CSRF,
-  ingest, injected payment latency -> incident -> investigation (payment first) -> incident memory (simulated matches
-  labelled) -> deterministic counterfactual replay -> md/html/json reports -> auto-resolve -> saved to memory graph.
-- Still not done: Playwright browser tests (only vitest unit tests for `lib.ts`), Go tests for ingest/detect/store/report,
-  checking the new React pages (other than Overview and the token gate) in a real browser, a dedicated reliability/soak test.
+## Not done / known limitations
+- Browser tests cover Chromium only; starting a lab experiment from the browser is only covered through the API.
+- No Go tests for the SQL store beyond the memory integration test, the detection engine loop, lab HTTP, or `cmd/*`.
+- Reliability: one run, one machine, graceful restarts only; no kill -9, disk-full or multi-day soak; outages longer than the
+  pipeline retry budget drop (and count) spans. After a traceforge image rebuild, incidents can open from the sample
+  traffic gap; the incident whose start preceded the fault injection in the reliability run was not analysed further.
+- With the 500 spans/s load service present, the investigation of the concurrent incident reported "No origin isolated"
+  (the extra service dilutes the dataset); the checker is honest here but this was not investigated further.
+- Hypothesis ranking is a heuristic (a false lead ranks second in the payment-latency run); replay is a model.
+- No TLS, rate limiting or per-user auth. Demo tokens are public values.

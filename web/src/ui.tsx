@@ -75,7 +75,7 @@ export function LineChart({ series, height = 150, format = (v: number) => String
     ro.observe(ref.current);
     return () => ro.disconnect();
   }, []);
-  const pad = { l: 44, r: 8, t: 8, b: 20 };
+  const pad = { l: 56, r: 8, t: 8, b: 20 };
   const all = series.flatMap(s => s.points);
   const geo = useMemo(() => {
     if (all.length === 0) return null;

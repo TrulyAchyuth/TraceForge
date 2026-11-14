@@ -43,7 +43,7 @@ function Graph() {
             {NODE_COLUMNS.map(c => <label key={c} className="row"><input type="checkbox" checked={types.has(c)} onChange={() => { const n = new Set(types); n.has(c) ? n.delete(c) : n.add(c); setTypes(n); }} />{NODE_LABEL[c]}</label>)}
             <label className="row"><input type="checkbox" checked={hideSim} onChange={e => setHideSim(e.target.checked)} />Hide simulated</label>
           </div>
-          <div className="graph-box"><svg width={view.width} height={view.height} role="img" aria-label="Incident memory graph">
+          <div className="graph-box"><svg viewBox={`0 0 ${view.width} ${view.height}`} width="100%" style={{ minWidth: 760 }} role="img" aria-label="Incident memory graph">
             {NODE_COLUMNS.map(c => { const n = view.nodes.find(x => x.type === c); return n ? <text key={c} className="gcol" x={n.x} y={18} textAnchor="middle">{NODE_LABEL[c].toUpperCase()}</text> : null; })}
             {view.edges.map((e, i) => { const a = byId.get(e.source)!, b = byId.get(e.target)!; const on = hot?.edges.includes(e);
               return <path key={i} className={`gedge ${e.effect ?? ''} ${on ? 'hot' : hot ? 'dim' : ''}`} d={`M${a.x},${a.y}C${(a.x + b.x) / 2},${a.y} ${(a.x + b.x) / 2},${b.y} ${b.x},${b.y}`} />; })}

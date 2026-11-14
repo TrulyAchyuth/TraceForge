@@ -59,7 +59,8 @@ test('services: filter by name and open a service', async ({ page }) => {
 test('incident: list, detail tabs, status change, note, investigation ranks payment first', async ({ page }) => {
   const bad = watch(page);
   await page.goto('/#/incidents');
-  await page.getByRole('link', { name: /Dependency degradation/ }).first().click();
+  await expect(page.getByRole('link', { name: /Dependency degradation/ }).first()).toBeVisible();
+  await page.goto('/#/incidents/1'); // the first payment-latency incident of a fresh stack (scripts/e2e.sh creates it)
   await expect(page.getByText('Signals')).toBeVisible();
   await page.getByRole('tab', { name: 'Investigation' }).click();
   await expect(page.getByText('integrity verified')).toBeVisible();
